@@ -63,7 +63,7 @@ export default function TestToolsPage() {
       const timestamp = Date.now();
       const promises = Array.from({ length: 10 }, (_, i) => {
         const service = services[i % services.length];
-        const uniquePhone = `${6 + (i % 4)}${String(timestamp).slice(-8)}${i}`.slice(0, 10);
+        const uniquePhone = `9${String(timestamp).slice(-6)}00${i}`.slice(0, 10);
         return fetch("/api/leads", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
