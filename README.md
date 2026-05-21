@@ -107,3 +107,7 @@ npm run dev
 ---
 
 *Demonstrates: Advisory Locking, Idempotency, Persistent Round-Robin, SSE, Rate Limiting, Audit Logging*
+
+---
+
+*Built with ❤️ by [Shivangi Beniwal](https://github.com/Shivangi14Beniwal)*
