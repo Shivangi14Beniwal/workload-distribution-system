@@ -8,7 +8,7 @@ export const LeadSchema = z.object({
     .string()
     .min(2, "Name must be at least 2 characters")
     .max(100, "Name too long")
-    .regex(/^[a-zA-Z\s]+$/, "Name can only contain letters and spaces")
+    .regex(/^[a-zA-Z0-9\s\-]+$/, "Name can only contain letters, numbers, spaces and hyphens")
     .transform((val) => val.trim()),
 
   phone: z
