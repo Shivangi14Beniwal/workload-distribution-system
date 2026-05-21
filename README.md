@@ -2,46 +2,14 @@
 
 A production-grade lead distribution platform that automatically assigns service requests to providers using mandatory rules, fair round-robin rotation, and real-time updates.
 
-**Live Demo:** https://workload-distribution-system-f9sz.vercel.app
-
+**Live Demo:** https://workload-distribution-system-f9sz.vercel.app  
 **GitHub:** https://github.com/Shivangi14Beniwal/workload-distribution-system
 
 ---
 
-## 🎯 What Problem Does This Solve?
-
-In platforms like Sulekha, UrbanClap, or any service marketplace — when a customer submits a request, the system needs to automatically decide which providers should receive that lead. This decision must be:
-
-- **Fair** — no single provider gets all the leads
-- **Rule-based** — certain providers must always get certain leads
-- **Concurrent-safe** — 100 requests at the same time should not cause double assignments
-- **Quota-aware** — providers have monthly limits
-- **Real-time** — providers see new leads instantly
-
-This project solves exactly that.
-
----
-
-## 🏗️ System Architecture
-
-```
-Customer Form → POST /api/leads → Allocation Engine → Database
-                                        ↓
-                              1. Mandatory Rules Check
-                              2. Fair Round-Robin Selection
-                              3. Quota Validation
-                              4. Atomic DB Write
-                              5. SSE Notification → Dashboard
-```
-
-
 ## What is this?
 
-When a customer submits a service request, the system automatically assigns exactly 3 providers using:
-- **Mandatory rules** — certain providers always get certain services
-- **Fair rotation** — provider with least assignments gets next lead
-- **Quota management** — providers have monthly limits (10/month)
-- **Real-time updates** — dashboard updates instantly via SSE
+When a customer submits a service request, the system automatically assigns exactly 3 providers using mandatory rules, fair rotation, and quota management. Built to demonstrate scalable backend engineering concepts.
 
 ---
 
@@ -60,9 +28,9 @@ When a customer submits a service request, the system automatically assigns exac
 ## Allocation Algorithm
 
 ```
-1. Check mandatory rules → assign Provider 1 (Service 1), Provider 5 (Service 2) etc.
+1. Check mandatory rules → assign fixed providers per service
 2. Fill remaining slots from rotation pool → ordered by assignedCount ASC
-3. Skip providers at monthly quota
+3. Skip providers at monthly quota (10/month)
 4. Always results in exactly 3 providers per lead
 ```
 
@@ -85,9 +53,9 @@ idempotencyKey: "quota-reset-2024-01-15" → processed once, cached forever
 
 **DB Constraints** — Correctness guaranteed even if application code has bugs
 ```
-@@unique([phone, serviceId])     → no duplicate leads
-@@unique([leadId, providerId])   → no double assignment
-@@unique([idempotencyKey])       → no duplicate webhook processing
+@@unique([phone, serviceId])    → no duplicate leads
+@@unique([leadId, providerId])  → no double assignment
+@@unique([idempotencyKey])      → no duplicate webhook processing
 ```
 
 ---
