@@ -45,7 +45,7 @@ export const WebhookSchema = z.object({
     .regex(/^[a-z.]+$/, "eventType must be lowercase with dots only"),
 
   payload: z
-    .record(z.unknown())
+    .record(z.string(), z.unknown())
     .optional()
     .default({}),
 });
