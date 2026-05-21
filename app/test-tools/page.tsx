@@ -53,46 +53,48 @@ export default function TestToolsPage() {
 
   const generateConcurrentLeads = async () => {
     setLoading("concurrent");
-    addLog("Generating 10 concurrent leads...", "info");
+    addLog("Generating 10 leads sequentially...", "info");
     try {
       const servicesRes = await fetch("/api/services");
       const servicesData = await servicesRes.json();
       const services = servicesData.services || [];
-      if (services.length === 0) { addLog("No services found", "error"); return; }
+      if (services.length === 0) {
+        addLog("No services found", "error");
+        return;
+      }
 
       const timestamp = Date.now();
-const suffix = String(timestamp).slice(-5);
-const phones = [
-  `9800${suffix}0`, `9800${suffix}1`, `9800${suffix}2`,
-  `9800${suffix}3`, `9800${suffix}4`, `9800${suffix}5`,
-  `9800${suffix}6`, `9800${suffix}7`, `9800${suffix}8`,
-  `9800${suffix}9`,
-].map(p => p.slice(0, 10));
 
-const promises = Array.from({ length: 10 }, (_, i) => {
-  const service = services[i % services.length];
-  const uniquePhone = phones[i];
-        return fetch("/api/leads", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: `Test User`,
-            phone: uniquePhone,
-            city: ["Mumbai", "Delhi", "Bangalore", "Chennai", "Pune"][i % 5],
-            serviceId: service.id,
-            description: `Concurrent test lead number ${i + 1}`,
-          }),
-        }).then(async (res) => ({ index: i + 1, status: res.status, data: await res.json() }));
-      });
+      for (let i = 0; i < 10; i++) {
+        const service = services[i % services.length];
+        // Build a guaranteed valid 10-digit phone starting with 9
+        const uniquePhone = `9${String(timestamp + i).slice(-9)}`;
+        try {
+          const res = await fetch("/api/leads", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: "Test User",
+              phone: uniquePhone,
+              city: ["Mumbai", "Delhi", "Bangalore", "Chennai", "Pune"][i % 5],
+              serviceId: service.id,
+              description: `Concurrent test lead number ${i + 1}`,
+            }),
+          });
+          const data = await res.json();
+          if (res.status === 201) {
+            addLog(`Lead ${i + 1}: Created — ${data.data?.assignedProviders} providers assigned`, "success");
+          } else {
+            addLog(`Lead ${i + 1}: ${data.error || "Failed"}`, "error");
+          }
+        } catch {
+          addLog(`Lead ${i + 1}: Network error`, "error");
+        }
+      }
 
-      const results = await Promise.all(promises);
-      results.forEach((r) => {
-        if (r.status === 201) addLog(`Lead ${r.index}: Created — ${r.data.data?.assignedProviders} providers assigned`, "success");
-        else addLog(`Lead ${r.index}: ${r.data.error || "Failed"}`, "error");
-      });
-      addLog("Concurrent test complete!", "success");
+      addLog("All leads processed!", "success");
     } catch {
-      addLog("Concurrent test failed", "error");
+      addLog("Test failed — check console", "error");
     } finally {
       setLoading(null);
     }
@@ -123,7 +125,7 @@ const promises = Array.from({ length: 10 }, (_, i) => {
       id: "concurrent",
       icon: "⚡",
       title: "Concurrent Leads",
-      desc: "Fire 10 lead creation requests simultaneously to stress-test the allocation engine.",
+      desc: "Fire 10 lead creation requests to stress-test the allocation engine.",
       buttonLabel: "Generate 10 Leads",
       loadingLabel: "Generating...",
       color: "#6366f1",
@@ -231,8 +233,7 @@ const promises = Array.from({ length: 10 }, (_, i) => {
               onClick={() => setLogs([])}
               style={{
                 fontSize: "12px", color: "var(--text-muted)", background: "none",
-                border: "none", cursor: "pointer", padding: "4px 8px",
-                borderRadius: "6px",
+                border: "none", cursor: "pointer", padding: "4px 8px", borderRadius: "6px",
               }}
             >
               Clear
