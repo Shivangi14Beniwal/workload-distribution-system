@@ -50,7 +50,7 @@ export default function RequestServicePage() {
 
       setSuccess(true);
       setForm({ name: "", phone: "", city: "", serviceId: "", description: "" });
-    } catch (err) {
+    } catch {
       setError("Network error. Please try again.");
     } finally {
       setLoading(false);
@@ -58,114 +58,320 @@ export default function RequestServicePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
-      <div className="max-w-lg mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Request a Service
-        </h1>
-        <p className="text-gray-500 mb-8">
-          Fill the form below and we will connect you with the right providers.
-        </p>
+    <div style={{
+      minHeight: "100vh",
+      background: "var(--bg-primary)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "40px 16px",
+    }}>
+      {/* Background glow */}
+      <div style={{
+        position: "fixed",
+        top: "20%",
+        left: "50%",
+        transform: "translateX(-50%)",
+        width: "500px",
+        height: "500px",
+        background: "radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%)",
+        pointerEvents: "none",
+        zIndex: 0,
+      }}/>
 
+      <div style={{
+        width: "100%",
+        maxWidth: "520px",
+        position: "relative",
+        zIndex: 1,
+      }}>
+        {/* Header */}
+        <div style={{ textAlign: "center", marginBottom: "32px" }}>
+          <div style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "6px 16px",
+            borderRadius: "100px",
+            border: "1px solid var(--border-bright)",
+            background: "var(--bg-card)",
+            fontSize: "13px",
+            color: "var(--accent-blue-bright)",
+            marginBottom: "16px",
+          }}>
+            📋 Service Request
+          </div>
+          <h1 style={{
+            fontSize: "32px",
+            fontWeight: 800,
+            marginBottom: "8px",
+            letterSpacing: "-1px",
+          }}>
+            Request a{" "}
+            <span style={{
+              background: "linear-gradient(135deg, #6366f1, #a855f7)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+            }}>Service</span>
+          </h1>
+          <p style={{ color: "var(--text-secondary)", fontSize: "15px" }}>
+            Fill the form and we'll connect you with the right providers instantly.
+          </p>
+        </div>
+
+        {/* Success Message */}
         {success && (
-          <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg mb-6">
-            Request submitted successfully! Providers have been notified.
+          <div style={{
+            padding: "16px",
+            borderRadius: "12px",
+            background: "rgba(34, 197, 94, 0.1)",
+            border: "1px solid rgba(34, 197, 94, 0.3)",
+            color: "#22c55e",
+            marginBottom: "24px",
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            fontSize: "14px",
+            fontWeight: 500,
+          }}>
+            ✅ Request submitted! Providers have been notified instantly.
           </div>
         )}
 
+        {/* Error Message */}
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-6">
-            {error}
+          <div style={{
+            padding: "16px",
+            borderRadius: "12px",
+            background: "rgba(239, 68, 68, 0.1)",
+            border: "1px solid rgba(239, 68, 68, 0.3)",
+            color: "#ef4444",
+            marginBottom: "24px",
+            fontSize: "14px",
+            fontWeight: 500,
+          }}>
+            ⚠️ {error}
           </div>
         )}
 
-        <form
-          onSubmit={handleSubmit}
-          className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5"
-        >
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Full Name
-            </label>
-            <input
-              type="text"
-              required
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Shivangi Sharma"
-            />
-          </div>
+        {/* Form Card */}
+        <div style={{
+          background: "var(--bg-card)",
+          border: "1px solid var(--border)",
+          borderRadius: "16px",
+          padding: "32px",
+        }}>
+          <form onSubmit={handleSubmit}>
+            {/* Name */}
+            <div style={{ marginBottom: "20px" }}>
+              <label style={{
+                display: "block",
+                fontSize: "13px",
+                fontWeight: 600,
+                color: "var(--text-secondary)",
+                marginBottom: "8px",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+              }}>Full Name</label>
+              <input
+                type="text"
+                required
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                placeholder="Shivangi Beniwal"
+                style={{
+                  width: "100%",
+                  padding: "12px 16px",
+                  borderRadius: "10px",
+                  border: "1px solid var(--border)",
+                  background: "var(--bg-secondary)",
+                  color: "var(--text-primary)",
+                  fontSize: "15px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                  transition: "border-color 0.2s",
+                }}
+                onFocus={(e) => e.target.style.borderColor = "#6366f1"}
+                onBlur={(e) => e.target.style.borderColor = "var(--border)"}
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Phone Number
-            </label>
-            <input
-              type="tel"
-              required
-              value={form.phone}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="9999999999"
-            />
-          </div>
+            {/* Phone */}
+            <div style={{ marginBottom: "20px" }}>
+              <label style={{
+                display: "block",
+                fontSize: "13px",
+                fontWeight: 600,
+                color: "var(--text-secondary)",
+                marginBottom: "8px",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+              }}>Phone Number</label>
+              <input
+                type="tel"
+                required
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                placeholder="9876543210"
+                style={{
+                  width: "100%",
+                  padding: "12px 16px",
+                  borderRadius: "10px",
+                  border: "1px solid var(--border)",
+                  background: "var(--bg-secondary)",
+                  color: "var(--text-primary)",
+                  fontSize: "15px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+                onFocus={(e) => e.target.style.borderColor = "#6366f1"}
+                onBlur={(e) => e.target.style.borderColor = "var(--border)"}
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              City
-            </label>
-            <input
-              type="text"
-              required
-              value={form.city}
-              onChange={(e) => setForm({ ...form, city: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Mumbai"
-            />
-          </div>
+            {/* City */}
+            <div style={{ marginBottom: "20px" }}>
+              <label style={{
+                display: "block",
+                fontSize: "13px",
+                fontWeight: 600,
+                color: "var(--text-secondary)",
+                marginBottom: "8px",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+              }}>City</label>
+              <input
+                type="text"
+                required
+                value={form.city}
+                onChange={(e) => setForm({ ...form, city: e.target.value })}
+                placeholder="Mumbai"
+                style={{
+                  width: "100%",
+                  padding: "12px 16px",
+                  borderRadius: "10px",
+                  border: "1px solid var(--border)",
+                  background: "var(--bg-secondary)",
+                  color: "var(--text-primary)",
+                  fontSize: "15px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+                onFocus={(e) => e.target.style.borderColor = "#6366f1"}
+                onBlur={(e) => e.target.style.borderColor = "var(--border)"}
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Service Type
-            </label>
-            <select
-              required
-              value={form.serviceId}
-              onChange={(e) => setForm({ ...form, serviceId: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Select a service</option>
-              {services.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
+            {/* Service */}
+            <div style={{ marginBottom: "20px" }}>
+              <label style={{
+                display: "block",
+                fontSize: "13px",
+                fontWeight: 600,
+                color: "var(--text-secondary)",
+                marginBottom: "8px",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+              }}>Service Type</label>
+              <select
+                required
+                value={form.serviceId}
+                onChange={(e) => setForm({ ...form, serviceId: e.target.value })}
+                style={{
+                  width: "100%",
+                  padding: "12px 16px",
+                  borderRadius: "10px",
+                  border: "1px solid var(--border)",
+                  background: "var(--bg-secondary)",
+                  color: form.serviceId ? "var(--text-primary)" : "var(--text-muted)",
+                  fontSize: "15px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                  cursor: "pointer",
+                }}
+                onFocus={(e) => e.target.style.borderColor = "#6366f1"}
+                onBlur={(e) => e.target.style.borderColor = "var(--border)"}
+              >
+                <option value="" style={{ background: "var(--bg-secondary)" }}>
+                  Select a service...
                 </option>
-              ))}
-            </select>
-          </div>
+                {services.map((s) => (
+                  <option key={s.id} value={s.id} style={{ background: "var(--bg-secondary)" }}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Description
-            </label>
-            <textarea
-              required
-              rows={3}
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Describe your requirement..."
-            />
-          </div>
+            {/* Description */}
+            <div style={{ marginBottom: "28px" }}>
+              <label style={{
+                display: "block",
+                fontSize: "13px",
+                fontWeight: 600,
+                color: "var(--text-secondary)",
+                marginBottom: "8px",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+              }}>Description</label>
+              <textarea
+                required
+                rows={4}
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                placeholder="Describe your requirement in detail (min 10 characters)..."
+                style={{
+                  width: "100%",
+                  padding: "12px 16px",
+                  borderRadius: "10px",
+                  border: "1px solid var(--border)",
+                  background: "var(--bg-secondary)",
+                  color: "var(--text-primary)",
+                  fontSize: "15px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                  resize: "vertical",
+                  fontFamily: "inherit",
+                }}
+                onFocus={(e) => e.target.style.borderColor = "#6366f1"}
+                onBlur={(e) => e.target.style.borderColor = "var(--border)"}
+              />
+            </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
-          >
-            {loading ? "Submitting..." : "Submit Request"}
-          </button>
-        </form>
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                width: "100%",
+                padding: "14px",
+                borderRadius: "10px",
+                border: "none",
+                background: loading
+                  ? "var(--border)"
+                  : "linear-gradient(135deg, #6366f1, #a855f7)",
+                color: "white",
+                fontSize: "16px",
+                fontWeight: 700,
+                cursor: loading ? "not-allowed" : "pointer",
+                boxShadow: loading ? "none" : "0 0 20px rgba(99,102,241,0.4)",
+                transition: "all 0.2s",
+              }}
+            >
+              {loading ? "Submitting..." : "Submit Request →"}
+            </button>
+          </form>
+        </div>
+
+        {/* Footer note */}
+        <p style={{
+          textAlign: "center",
+          color: "var(--text-muted)",
+          fontSize: "13px",
+          marginTop: "16px",
+        }}>
+          Your request will be assigned to exactly 3 providers instantly.
+        </p>
       </div>
     </div>
   );
