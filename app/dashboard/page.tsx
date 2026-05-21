@@ -43,180 +43,204 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchData();
-
-    // Setup SSE for real-time updates
     const es = new EventSource("/api/sse");
     eventSourceRef.current = es;
-
     es.onopen = () => setConnected(true);
-
     es.onmessage = (event) => {
-      if (event.data === "update" || event.data === "connected") {
-        fetchData();
-      }
+      if (event.data === "update" || event.data === "connected") fetchData();
     };
-
     es.onerror = () => {
       setConnected(false);
-      // Fallback polling every 5 seconds
       const interval = setInterval(fetchData, 5000);
       return () => clearInterval(interval);
     };
-
-    return () => {
-      es.close();
-    };
+    return () => es.close();
   }, []);
+
+  const totalLeads = providers.reduce((sum, p) => sum + p.leadsThisMonth, 0);
+  const fullQuota = providers.filter((p) => p.remainingQuota === 0).length;
+  const available = providers.filter((p) => p.remainingQuota > 0).length;
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-500">Loading dashboard...</p>
+      <div style={{
+        minHeight: "100vh",
+        background: "var(--bg-primary)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: "32px", marginBottom: "16px" }}>⚡</div>
+          <p style={{ color: "var(--text-secondary)" }}>Loading dashboard...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-7xl mx-auto">
+    <div style={{ minHeight: "100vh", background: "var(--bg-primary)", padding: "32px 24px" }}>
+      <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "32px", flexWrap: "wrap", gap: "16px" }}>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              Provider Dashboard
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: "8px",
+              padding: "5px 14px", borderRadius: "100px",
+              border: "1px solid var(--border-bright)", background: "var(--bg-card)",
+              fontSize: "12px", color: "var(--accent-blue-bright)", marginBottom: "12px",
+            }}>
+              📊 Live Dashboard
+            </div>
+            <h1 style={{ fontSize: "32px", fontWeight: 800, letterSpacing: "-1px", marginBottom: "4px" }}>
+              Provider{" "}
+              <span style={{
+                background: "linear-gradient(135deg, #6366f1, #a855f7)",
+                WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+              }}>Dashboard</span>
             </h1>
-            <p className="text-gray-500 mt-1">
+            <p style={{ color: "var(--text-secondary)", fontSize: "14px" }}>
               Real-time lead distribution overview
             </p>
           </div>
-          <div className="text-right">
-            <div className="flex items-center gap-2 justify-end">
-              <div
-                className={`w-2 h-2 rounded-full ${
-                  connected ? "bg-green-500" : "bg-yellow-500"
-                }`}
-              />
-              <span className="text-sm text-gray-500">
+
+          <div style={{ textAlign: "right" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "flex-end", marginBottom: "4px" }}>
+              <div className="pulse" style={{
+                width: "8px", height: "8px", borderRadius: "50%",
+                background: connected ? "var(--accent-green)" : "var(--accent-amber)",
+              }}/>
+              <span style={{ fontSize: "13px", color: connected ? "var(--accent-green)" : "var(--accent-amber)", fontWeight: 600 }}>
                 {connected ? "Live" : "Polling"}
               </span>
             </div>
             {lastUpdated && (
-              <p className="text-xs text-gray-400 mt-1">
+              <p style={{ fontSize: "12px", color: "var(--text-muted)" }}>
                 Updated: {lastUpdated.toLocaleTimeString()}
               </p>
             )}
           </div>
         </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <p className="text-sm text-gray-500">Total Providers</p>
-            <p className="text-2xl font-bold text-gray-900">
-              {providers.length}
-            </p>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <p className="text-sm text-gray-500">Total Leads</p>
-            <p className="text-2xl font-bold text-blue-600">
-              {providers.reduce((sum, p) => sum + p.leadsThisMonth, 0)}
-            </p>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <p className="text-sm text-gray-500">Full Quota</p>
-            <p className="text-2xl font-bold text-red-500">
-              {providers.filter((p) => p.remainingQuota === 0).length}
-            </p>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <p className="text-sm text-gray-500">Available</p>
-            <p className="text-2xl font-bold text-green-600">
-              {providers.filter((p) => p.remainingQuota > 0).length}
-            </p>
-          </div>
+        {/* Stats */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px", marginBottom: "32px" }}>
+          {[
+            { label: "Total Providers", value: providers.length, color: "var(--text-primary)", icon: "👥" },
+            { label: "Total Leads", value: totalLeads, color: "var(--accent-blue-bright)", icon: "📋" },
+            { label: "Full Quota", value: fullQuota, color: "var(--accent-red)", icon: "🔴" },
+            { label: "Available", value: available, color: "var(--accent-green)", icon: "✅" },
+          ].map((stat) => (
+            <div key={stat.label} style={{
+              padding: "20px 24px",
+              borderRadius: "12px",
+              background: "var(--bg-card)",
+              border: "1px solid var(--border)",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+                <span style={{ fontSize: "18px" }}>{stat.icon}</span>
+                <p style={{ fontSize: "13px", color: "var(--text-secondary)" }}>{stat.label}</p>
+              </div>
+              <p style={{ fontSize: "28px", fontWeight: 800, color: stat.color }}>{stat.value}</p>
+            </div>
+          ))}
         </div>
 
         {/* Provider Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {providers.map((provider) => (
-            <div
-              key={provider.id}
-              className="bg-white rounded-xl border border-gray-200 overflow-hidden"
-            >
-              {/* Provider Header */}
-              <div className="p-4 border-b border-gray-100">
-                <div className="flex items-center justify-between">
-                  <h2 className="font-semibold text-gray-900">
-                    {provider.name}
-                  </h2>
-                  <span
-                    className={`text-xs px-2 py-1 rounded-full font-medium ${
-                      provider.remainingQuota === 0
-                        ? "bg-red-100 text-red-700"
-                        : "bg-green-100 text-green-700"
-                    }`}
-                  >
-                    {provider.remainingQuota === 0 ? "Full" : "Available"}
-                  </span>
-                </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: "20px" }}>
+          {providers.map((provider) => {
+            const pct = (provider.leadsThisMonth / provider.monthlyQuota) * 100;
+            const isFull = provider.remainingQuota === 0;
+            return (
+              <div key={provider.id} style={{
+                background: "var(--bg-card)",
+                border: `1px solid ${isFull ? "rgba(239,68,68,0.3)" : "var(--border)"}`,
+                borderRadius: "14px",
+                overflow: "hidden",
+                transition: "border-color 0.2s",
+              }}>
+                {/* Card Header */}
+                <div style={{ padding: "20px 20px 16px", borderBottom: "1px solid var(--border)" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      <div style={{
+                        width: "36px", height: "36px", borderRadius: "8px",
+                        background: "linear-gradient(135deg, #6366f120, #a855f720)",
+                        border: "1px solid #6366f140",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: "14px", fontWeight: 700, color: "var(--accent-blue-bright)",
+                      }}>
+                        {provider.name.split(" ")[1]}
+                      </div>
+                      <span style={{ fontWeight: 700, fontSize: "15px" }}>{provider.name}</span>
+                    </div>
+                    <span style={{
+                      fontSize: "11px", fontWeight: 700, padding: "4px 10px", borderRadius: "100px",
+                      background: isFull ? "rgba(239,68,68,0.15)" : "rgba(34,197,94,0.15)",
+                      color: isFull ? "var(--accent-red)" : "var(--accent-green)",
+                      border: `1px solid ${isFull ? "rgba(239,68,68,0.3)" : "rgba(34,197,94,0.3)"}`,
+                    }}>
+                      {isFull ? "FULL" : "AVAILABLE"}
+                    </span>
+                  </div>
 
-                {/* Quota Bar */}
-                <div className="mt-3">
-                  <div className="flex justify-between text-xs text-gray-500 mb-1">
-                    <span>{provider.leadsThisMonth} leads</span>
+                  {/* Quota Bar */}
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", color: "var(--text-muted)", marginBottom: "6px" }}>
+                    <span>{provider.leadsThisMonth} leads assigned</span>
                     <span>{provider.remainingQuota} remaining</span>
                   </div>
-                  <div className="w-full bg-gray-100 rounded-full h-2">
-                    <div
-                      className="bg-blue-500 h-2 rounded-full transition-all duration-500"
-                      style={{
-                        width: `${
-                          (provider.leadsThisMonth / provider.monthlyQuota) *
-                          100
-                        }%`,
-                      }}
-                    />
+                  <div style={{ width: "100%", height: "6px", borderRadius: "3px", background: "var(--bg-secondary)", overflow: "hidden" }}>
+                    <div style={{
+                      height: "100%", borderRadius: "3px",
+                      width: `${pct}%`,
+                      background: isFull
+                        ? "var(--accent-red)"
+                        : pct > 70
+                        ? "var(--accent-amber)"
+                        : "linear-gradient(90deg, #6366f1, #a855f7)",
+                      transition: "width 0.5s ease",
+                    }}/>
                   </div>
                 </div>
-              </div>
 
-              {/* Leads List */}
-              <div className="p-4">
-                {provider.leads.length === 0 ? (
-                  <p className="text-sm text-gray-400 text-center py-4">
-                    No leads yet
-                  </p>
-                ) : (
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {provider.leads.map((lead) => (
-                      <div
-                        key={lead.id}
-                        className="flex items-start justify-between text-sm border border-gray-100 rounded-lg p-2"
-                      >
-                        <div>
-                          <p className="font-medium text-gray-800">
-                            {lead.name}
-                          </p>
-                          <p className="text-gray-400 text-xs">
-                            {lead.service} • {lead.city}
-                          </p>
+                {/* Leads List */}
+                <div style={{ padding: "12px 20px 16px" }}>
+                  {provider.leads.length === 0 ? (
+                    <p style={{ fontSize: "13px", color: "var(--text-muted)", textAlign: "center", padding: "16px 0" }}>
+                      No leads assigned yet
+                    </p>
+                  ) : (
+                    <div style={{ maxHeight: "200px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px" }}>
+                      {provider.leads.map((lead) => (
+                        <div key={lead.id} style={{
+                          display: "flex", alignItems: "center", justifyContent: "space-between",
+                          padding: "8px 12px", borderRadius: "8px",
+                          background: "var(--bg-secondary)", border: "1px solid var(--border)",
+                        }}>
+                          <div>
+                            <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-primary)", marginBottom: "2px" }}>
+                              {lead.name}
+                            </p>
+                            <p style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+                              {lead.service} • {lead.city}
+                            </p>
+                          </div>
+                          <span style={{
+                            fontSize: "10px", fontWeight: 700, padding: "3px 8px", borderRadius: "6px",
+                            background: lead.assignmentType === "MANDATORY" ? "rgba(168,85,247,0.15)" : "rgba(99,102,241,0.15)",
+                            color: lead.assignmentType === "MANDATORY" ? "#a855f7" : "var(--accent-blue-bright)",
+                            border: `1px solid ${lead.assignmentType === "MANDATORY" ? "rgba(168,85,247,0.3)" : "rgba(99,102,241,0.3)"}`,
+                          }}>
+                            {lead.assignmentType === "MANDATORY" ? "MANDATORY" : "ROTATION"}
+                          </span>
                         </div>
-                        <span
-                          className={`text-xs px-1.5 py-0.5 rounded font-medium ${
-                            lead.assignmentType === "MANDATORY"
-                              ? "bg-purple-100 text-purple-700"
-                              : "bg-blue-100 text-blue-700"
-                          }`}
-                        >
-                          {lead.assignmentType === "MANDATORY" ? "M" : "R"}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
