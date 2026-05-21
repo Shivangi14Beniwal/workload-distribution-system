@@ -76,7 +76,7 @@ const promises = Array.from({ length: 10 }, (_, i) => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            name: `Test User ${timestamp}-${i}`,
+            name: `Test User`,
             phone: uniquePhone,
             city: ["Mumbai", "Delhi", "Bangalore", "Chennai", "Pune"][i % 5],
             serviceId: service.id,
