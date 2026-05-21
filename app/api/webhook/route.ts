@@ -1,37 +1,52 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db";
+import { WebhookSchema, buildErrorResponse, buildSuccessResponse } from "@/lib/validations";
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { idempotencyKey, eventType, payload } = body;
-
-    if (!idempotencyKey || !eventType) {
+    // Parse body
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
       return NextResponse.json(
-        { error: "idempotencyKey and eventType are required" },
+        buildErrorResponse("Invalid JSON body", 400),
         { status: 400 }
       );
     }
 
-    // Check if already processed — idempotency check
+    // Validate input
+    const parsed = WebhookSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        buildErrorResponse(
+          "Validation failed",
+          400,
+          parsed.error.flatten().fieldErrors
+        ),
+        { status: 400 }
+      );
+    }
+
+    const { idempotencyKey, eventType, payload } = parsed.data;
+
+    // Idempotency check — already processed?
     const existing = await prisma.webhookEvent.findUnique({
       where: { idempotencyKey },
     });
 
-    if (existing) {
-      if (existing.status === "PROCESSED") {
-        return NextResponse.json(
-          {
-            success: true,
-            message: "Already processed — idempotent response",
-            idempotencyKey,
-          },
-          { status: 200 }
-        );
-      }
+    if (existing?.status === "PROCESSED") {
+      return NextResponse.json(
+        buildSuccessResponse({
+          message: "Already processed — idempotent response",
+          idempotencyKey,
+          processedAt: existing.processedAt,
+        }),
+        { status: 200 }
+      );
     }
 
-    // Create webhook event record
+    // Create or get webhook event record
     const webhookEvent = await prisma.webhookEvent.upsert({
       where: { idempotencyKey },
       update: {},
@@ -39,7 +54,7 @@ export async function POST(req: NextRequest) {
         idempotencyKey,
         eventType,
         status: "PENDING",
-        payload: payload || {},
+        payload: payload as object,
       },
     });
 
@@ -57,32 +72,43 @@ export async function POST(req: NextRequest) {
         data: {
           status: "PROCESSED",
           processedAt: new Date(),
-          responsePayload: { message: "All provider quotas reset to 0" },
+          responsePayload: {
+            message: "All provider quotas reset to 0",
+            resetAt: new Date().toISOString(),
+          },
         },
       });
 
       await prisma.auditLog.create({
         data: {
           action: "QUOTA_RESET",
-          metadata: { idempotencyKey, eventType },
+          metadata: { idempotencyKey, eventType, triggeredAt: new Date() },
         },
       });
 
-      return NextResponse.json({
-        success: true,
-        message: "All provider quotas have been reset",
-      });
+      return NextResponse.json(
+        buildSuccessResponse({
+          message: "All provider quotas have been reset",
+          resetAt: new Date().toISOString(),
+        })
+      );
     }
 
+    // Unknown event type
+    await prisma.webhookEvent.update({
+      where: { id: webhookEvent.id },
+      data: { status: "FAILED" },
+    });
+
     return NextResponse.json(
-      { error: "Unknown event type" },
+      buildErrorResponse(`Unknown event type: ${eventType}`, 400),
       { status: 400 }
     );
 
   } catch (err) {
     console.error("Webhook error:", err);
     return NextResponse.json(
-      { error: "Internal server error" },
+      buildErrorResponse("Internal server error", 500),
       { status: 500 }
     );
   }

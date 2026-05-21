@@ -1,31 +1,48 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db";
 import { allocateLead } from "@/lib/allocation/engine";
-import { z } from "zod";
-
-const LeadSchema = z.object({
-  name: z.string().min(1, "Name required"),
-  phone: z.string().min(10, "Valid phone required"),
-  city: z.string().min(1, "City required"),
-  serviceId: z.string().uuid("Valid service required"),
-  description: z.string().min(1, "Description required"),
-});
+import { LeadSchema, buildErrorResponse, buildSuccessResponse } from "@/lib/validations";
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const parsed = LeadSchema.safeParse(body);
+    // Parse body
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json(
+        buildErrorResponse("Invalid JSON body", 400),
+        { status: 400 }
+      );
+    }
 
+    // Validate + sanitize input
+    const parsed = LeadSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "Validation failed", details: parsed.error.flatten() },
+        buildErrorResponse(
+          "Validation failed",
+          400,
+          parsed.error.flatten().fieldErrors
+        ),
         { status: 400 }
       );
     }
 
     const { name, phone, city, serviceId, description } = parsed.data;
 
-    // Create lead — DB will throw P2002 if same phone+service exists
+    // Check service exists
+    const service = await prisma.service.findUnique({
+      where: { id: serviceId },
+    });
+    if (!service) {
+      return NextResponse.json(
+        buildErrorResponse("Service not found", 404),
+        { status: 404 }
+      );
+    }
+
+    // Create lead — DB unique constraint catches duplicates
     let lead;
     try {
       lead = await prisma.lead.create({
@@ -34,61 +51,97 @@ export async function POST(req: NextRequest) {
     } catch (err: any) {
       if (err.code === "P2002") {
         return NextResponse.json(
-          { error: "You have already submitted a request for this service." },
+          buildErrorResponse(
+            "You have already submitted a request for this service with this phone number.",
+            409
+          ),
           { status: 409 }
         );
       }
       throw err;
     }
 
-    // Audit log
+    // Audit log — lead created
     await prisma.auditLog.create({
       data: {
         leadId: lead.id,
         action: "LEAD_CREATED",
-        metadata: { name, phone, city, serviceId },
+        metadata: { name, phone, city, serviceId, serviceName: service.name },
       },
     });
 
-    // Allocate providers
-    const assignments = await allocateLead(lead.id, serviceId);
+    // Run allocation engine
+    let assignments;
+    try {
+      assignments = await allocateLead(lead.id, serviceId);
+    } catch (err) {
+      // Allocation failed — log it but don't fail the request
+      // Lead is saved, manual allocation can happen later
+      await prisma.auditLog.create({
+        data: {
+          leadId: lead.id,
+          action: "ALLOCATION_FAILED",
+          metadata: {
+            error: err instanceof Error ? err.message : "Unknown error",
+          },
+        },
+      });
+
+      return NextResponse.json(
+        buildSuccessResponse({
+          leadId: lead.id,
+          assignedProviders: 0,
+          warning: "Lead saved but allocation failed. Will retry.",
+        }),
+        { status: 201 }
+      );
+    }
 
     // Notify SSE clients
     notifyDashboard();
 
     return NextResponse.json(
-      {
-        success: true,
+      buildSuccessResponse({
         leadId: lead.id,
         assignedProviders: assignments.length,
-      },
+        service: service.name,
+      }),
       { status: 201 }
     );
+
   } catch (err) {
     console.error("Lead creation error:", err);
     return NextResponse.json(
-      { error: "Internal server error" },
+      buildErrorResponse("Internal server error", 500),
       { status: 500 }
     );
   }
 }
 
 export async function GET() {
-  const leads = await prisma.lead.findMany({
-    include: {
-      service: true,
-      assignments: {
-        include: { provider: true },
+  try {
+    const leads = await prisma.lead.findMany({
+      include: {
+        service: true,
+        assignments: {
+          include: { provider: true },
+        },
       },
-    },
-    orderBy: { createdAt: "desc" },
-    take: 50,
-  });
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    });
 
-  return NextResponse.json({ leads });
+    return NextResponse.json(buildSuccessResponse({ leads }));
+  } catch (err) {
+    console.error("Leads fetch error:", err);
+    return NextResponse.json(
+      buildErrorResponse("Internal server error", 500),
+      { status: 500 }
+    );
+  }
 }
 
-// SSE notification — will be connected in sse/route.ts
+// SSE clients store
 let sseClients: ReadableStreamDefaultController[] = [];
 
 export function addSSEClient(controller: ReadableStreamDefaultController) {
