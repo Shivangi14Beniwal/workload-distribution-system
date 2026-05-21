@@ -61,9 +61,17 @@ export default function TestToolsPage() {
       if (services.length === 0) { addLog("No services found", "error"); return; }
 
       const timestamp = Date.now();
-      const promises = Array.from({ length: 10 }, (_, i) => {
-        const service = services[i % services.length];
-        const uniquePhone = `9${String(timestamp).slice(-6)}00${i}`.slice(0, 10);
+const suffix = String(timestamp).slice(-5);
+const phones = [
+  `9800${suffix}0`, `9800${suffix}1`, `9800${suffix}2`,
+  `9800${suffix}3`, `9800${suffix}4`, `9800${suffix}5`,
+  `9800${suffix}6`, `9800${suffix}7`, `9800${suffix}8`,
+  `9800${suffix}9`,
+].map(p => p.slice(0, 10));
+
+const promises = Array.from({ length: 10 }, (_, i) => {
+  const service = services[i % services.length];
+  const uniquePhone = phones[i];
         return fetch("/api/leads", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
