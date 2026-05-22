@@ -278,3 +278,11 @@ body {
     font-size: 14px;
   }
 }
+@media (max-width: 640px) {
+  .hide-mobile {
+    display: none !important;
+  }
+  .show-mobile {
+    display: flex !important;
+  }
+}

@@ -2,7 +2,7 @@
 
 A production-grade lead distribution platform that automatically assigns service requests to providers using mandatory rules, fair round-robin rotation, and real-time updates.
 
-**Live Demo:** https://workload-distribution-system-f9sz.vercel.app  
+**Live Demo:** https://workload-distribution-system-f9sz.vercel.app/
 **GitHub:** https://github.com/Shivangi14Beniwal/workload-distribution-system
 
 ---
