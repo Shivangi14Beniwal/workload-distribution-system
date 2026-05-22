@@ -15,8 +15,11 @@ export default function Home() {
 
       <div style={{
         maxWidth: "1100px", margin: "0 auto",
-        padding: "clamp(40px, 8vw, 100px) clamp(16px, 4vw, 24px) 60px",
-        textAlign: "center", position: "relative",
+padding: "clamp(40px, 8vw, 100px) 20px 60px",
+textAlign: "center", position: "relative",
+overflowX: "hidden",
+width: "100%",
+boxSizing: "border-box",
       }}>
 
         {/* Badge */}
