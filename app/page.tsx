@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg-primary)", overflow: "hidden" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg-primary)", overflowX: "hidden", width: "100%" }}>
       
       {/* Hero Background Glow */}
       <div style={{
@@ -63,7 +63,7 @@ export default function Home() {
           display: "flex", gap: "12px", justifyContent: "center",
           flexWrap: "wrap", marginBottom: "60px", padding: "0 16px",
         }}>
-          <Link href="/request-service" style={{ textDecoration: "none", width: "auto" }}>
+          <Link href="/request-service" style={{ textDecoration: "none" }}>
             <div style={{
               padding: "clamp(10px, 2vw, 14px) clamp(20px, 4vw, 32px)",
               borderRadius: "10px",
